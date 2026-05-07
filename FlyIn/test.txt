@@ -1,0 +1,173 @@
+nb_drones: 25
+
+start_hub: hub 0 0 [color=green]
+end_hub: goal 50 50 [color=yellow]
+
+hub: alpha1 2 3 [zone=normal color=blue]
+hub: alpha2 4 5 [zone=priority color=green max_drones=2]
+hub: alpha3 6 4 [zone=restricted color=red]
+hub: alpha4 8 6 [zone=normal color=blue]
+hub: alpha5 10 8 [zone=priority color=green max_drones=3]
+
+hub: beta1 12 5 [zone=normal color=yellow]
+hub: beta2 14 7 [zone=restricted color=red]
+hub: beta3 16 9 [zone=normal color=blue]
+hub: beta4 18 11 [zone=priority color=green]
+hub: beta5 20 13 [zone=blocked color=gray]
+
+hub: gamma1 5 12 [zone=normal color=blue]
+hub: gamma2 7 14 [zone=priority color=green max_drones=2]
+hub: gamma3 9 16 [zone=restricted color=red]
+hub: gamma4 11 18 [zone=normal color=yellow]
+hub: gamma5 13 20 [zone=priority color=green]
+
+hub: delta1 15 15 [zone=normal color=blue]
+hub: delta2 17 17 [zone=restricted color=red]
+hub: delta3 19 19 [zone=priority color=green]
+hub: delta4 21 21 [zone=normal color=yellow]
+hub: delta5 23 23 [zone=blocked color=gray]
+
+hub: epsilon1 25 10 [zone=normal color=blue]
+hub: epsilon2 27 12 [zone=priority color=green max_drones=4]
+hub: epsilon3 29 14 [zone=restricted color=red]
+hub: epsilon4 31 16 [zone=normal color=yellow]
+hub: epsilon5 33 18 [zone=priority color=green]
+
+hub: zeta1 20 25 [zone=normal color=blue]
+hub: zeta2 22 27 [zone=priority color=green]
+hub: zeta3 24 29 [zone=restricted color=red]
+hub: zeta4 26 31 [zone=normal color=yellow]
+hub: zeta5 28 33 [zone=blocked color=gray]
+
+hub: eta1 30 22 [zone=normal color=blue]
+hub: eta2 32 24 [zone=priority color=green]
+hub: eta3 34 26 [zone=restricted color=red]
+hub: eta4 36 28 [zone=normal color=yellow]
+hub: eta5 38 30 [zone=priority color=green max_drones=2]
+
+hub: theta1 40 10 [zone=normal color=blue]
+hub: theta2 42 12 [zone=priority color=green]
+hub: theta3 44 14 [zone=restricted color=red]
+hub: theta4 46 16 [zone=normal color=yellow]
+hub: theta5 48 18 [zone=blocked color=gray]
+
+hub: iota1 35 35 [zone=normal color=blue]
+hub: iota2 37 37 [zone=priority color=green]
+hub: iota3 39 39 [zone=restricted color=red]
+hub: iota4 41 41 [zone=normal color=yellow]
+hub: iota5 43 43 [zone=priority color=green]
+
+hub: kappa1 10 35 [zone=normal color=blue]
+hub: kappa2 12 37 [zone=priority color=green]
+hub: kappa3 14 39 [zone=restricted color=red]
+hub: kappa4 16 41 [zone=normal color=yellow]
+hub: kappa5 18 43 [zone=blocked color=gray]
+
+hub: lambda1 45 25 [zone=normal color=blue]
+hub: lambda2 47 27 [zone=priority color=green]
+hub: lambda3 49 29 [zone=restricted color=red]
+hub: lambda4 50 35 [zone=normal color=yellow]
+hub: lambda5 48 40 [zone=priority color=green max_drones=3]
+
+hub: megaCenter 25 25 [zone=priority color=gold max_drones=10]
+hub: dangerZone1 30 30 [zone=restricted color=darkred]
+hub: dangerZone2 15 30 [zone=restricted color=darkred]
+hub: obstacleA 22 22 [zone=blocked color=gray]
+hub: obstacleB 40 40 [zone=blocked color=gray]
+
+connection: hub-alpha1
+connection: alpha1-alpha2
+connection: alpha2-alpha3
+connection: alpha3-alpha4
+connection: alpha4-alpha5
+
+connection: alpha5-beta1
+connection: beta1-beta2
+connection: beta2-beta3
+connection: beta3-beta4
+connection: beta4-beta5
+
+connection: alpha2-gamma1
+connection: gamma1-gamma2
+connection: gamma2-gamma3
+connection: gamma3-gamma4
+connection: gamma4-gamma5
+
+connection: gamma5-delta1
+connection: delta1-delta2
+connection: delta2-delta3
+connection: delta3-delta4
+connection: delta4-delta5
+
+connection: beta3-epsilon1
+connection: epsilon1-epsilon2
+connection: epsilon2-epsilon3
+connection: epsilon3-epsilon4
+connection: epsilon4-epsilon5
+
+connection: delta3-zeta1
+connection: zeta1-zeta2
+connection: zeta2-zeta3
+connection: zeta3-zeta4
+connection: zeta4-zeta5
+
+connection: epsilon5-eta1
+connection: eta1-eta2
+connection: eta2-eta3
+connection: eta3-eta4
+connection: eta4-eta5
+
+connection: eta5-theta1
+connection: theta1-theta2
+connection: theta2-theta3
+connection: theta3-theta4
+connection: theta4-theta5
+
+connection: zeta5-iota1
+connection: iota1-iota2
+connection: iota2-iota3
+connection: iota3-iota4
+connection: iota4-iota5
+
+connection: gamma5-kappa1
+connection: kappa1-kappa2
+connection: kappa2-kappa3
+connection: kappa3-kappa4
+connection: kappa4-kappa5
+
+connection: theta5-lambda1
+connection: lambda1-lambda2
+connection: lambda2-lambda3
+connection: lambda3-lambda4
+connection: lambda4-lambda5
+
+connection: megaCenter-alpha5 [max_link_capacity=5]
+connection: megaCenter-delta3 [max_link_capacity=5]
+connection: megaCenter-epsilon3 [max_link_capacity=5]
+connection: megaCenter-zeta3 [max_link_capacity=5]
+connection: megaCenter-eta3 [max_link_capacity=5]
+
+connection: megaCenter-dangerZone1 [max_link_capacity=1]
+connection: megaCenter-dangerZone2 [max_link_capacity=1]
+
+connection: dangerZone1-iota3
+connection: dangerZone2-kappa3
+
+connection: obstacleA-delta2
+connection: obstacleB-iota4
+
+connection: lambda5-goal
+connection: iota5-goal
+connection: theta5-goal
+
+connection: alpha1-gamma1
+connection: beta2-delta2
+connection: epsilon2-zeta2
+connection: eta2-iota2
+connection: kappa5-megaCenter [max_link_capacity=2]
+
+connection: beta4-epsilon4
+connection: gamma2-delta4
+connection: zeta1-eta1
+connection: theta2-lambda2
+connection: iota5-lambda5 [max_link_capacity=4]
