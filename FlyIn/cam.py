@@ -3,7 +3,7 @@ class Cam:
             self,
             x: int = 0,
             y: int = 0,
-            zoom: int = 0
+            zoom: float = 1
     ) -> None:
         """Initialize a cam object"""
         self.x = x

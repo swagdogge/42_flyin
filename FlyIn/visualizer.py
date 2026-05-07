@@ -24,14 +24,19 @@ COLOR_TEXT      = (240, 240, 240)
 COLOR_START      = ( 80, 220,  80)
 COLOR_END     = (220, 200,  60)
 
-
+def cammed(hub: Hub, cam: Cam) -> tuple[int, int]:
+    return (
+        int((hub.x - cam.x) * cam.zoom),
+        int((hub.y - cam.y) * cam.zoom),
+    )
+ 
 def draw_connection(surface, hub_a, hub_b, cam: Cam, capacity=1):
     """Draw a line between two hubs, thicker for higher capacity."""
     pygame.draw.line(
         surface,
         COLOR_CONNECTION,
-        (hub_a.x - cam.x, hub_a.y - cam.y),
-        (hub_b.x - cam.x, hub_b.y - cam.y),
+        cammed(hub_a, cam),
+        cammed(hub_b, cam),
         width=max(1, capacity * 2),
     )
 
@@ -41,17 +46,21 @@ def draw_hub(surface, hub: Hub, font, cam: Cam):
 
     # outer ring for start/end
     if hub.is_start:
-        pygame.draw.circle(surface, COLOR_START, (hub.x - cam.x, hub.y - cam.y), HUB_RADIUS + 5, width=3)
+        pygame.draw.circle(surface, COLOR_START, cammed(hub, cam), HUB_RADIUS + 5, width=3)
     if hub.is_end:
-        pygame.draw.circle(surface, COLOR_END,   (hub.x - cam.x, hub.y - cam.y), HUB_RADIUS + 5, width=3)
+        pygame.draw.circle(surface, COLOR_END, cammed(hub, cam), HUB_RADIUS + 5, width=3)
 
     # main circle
-    pygame.draw.circle(surface, color,       (hub.x - cam.x, hub.y - cam.y), HUB_RADIUS)
-    pygame.draw.circle(surface, COLOR_TEXT,  (hub.x - cam.x, hub.y - cam.y), HUB_RADIUS, width=1)
+    pygame.draw.circle(surface, color, cammed(hub, cam), HUB_RADIUS)
+    pygame.draw.circle(surface, COLOR_TEXT, cammed(hub, cam), HUB_RADIUS, width=1)
 
     # label below the circle
     label = font.render(hub.name, True, COLOR_TEXT)
-    rect  = label.get_rect(centerx=hub.x - cam.x, top=hub.y - cam.y + HUB_RADIUS + 4)
+    x, y = cammed(hub, cam)
+    rect = label.get_rect(
+        centerx=x,
+        top=y + HUB_RADIUS + 4
+    )
     surface.blit(label, rect)
 
 def scale_hubs(hubs, margin, screen_height, screen_width):
@@ -74,7 +83,7 @@ def scale_hubs(hubs, margin, screen_height, screen_width):
 
 def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
     pygame.init()
-    cam = Cam(0, 0, 0)
+    cam = Cam(0, 0, 1)
     info = pygame.display.Info()
     screen_width = info.current_w
     screen_height = info.current_h
@@ -112,6 +121,10 @@ def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
 
         if keys[pygame.K_RIGHT]:
             cam.x += int(screen_width / 100)
+        if keys[pygame.K_EQUALS]:
+            cam.zoom += 0.01
+        if keys[pygame.K_MINUS]:
+            cam.zoom -= 0.01
 
         screen.fill(COLOR_BG)
 
