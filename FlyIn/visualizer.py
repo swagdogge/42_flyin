@@ -1,5 +1,6 @@
 import pygame
 import math
+from network import Network
 from connection import Connection
 from hub import Hub
 from cam import Cam
@@ -81,7 +82,7 @@ def scale_hubs(hubs, margin, screen_height, screen_width):
         h.y = int(margin + (h.y - min_y) / span_y * (screen_height - 2 * margin))
 
 
-def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
+def visualize(network: Network) -> None:
     pygame.init()
     cam = Cam(0, 0, 1)
     info = pygame.display.Info()
@@ -93,9 +94,8 @@ def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
     clock = pygame.time.Clock()
 
     # build name → hub lookup so connections can find their endpoints
-    hub_map = {h.name: h for h in hubs}
 
-    scale_hubs(hubs, 80, screen_height, screen_width)
+    scale_hubs(network.hubs.values(), 80, screen_height, screen_width)
     running = True
     while running:
 
@@ -109,16 +109,12 @@ def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
                     running = False
 
         keys = pygame.key.get_pressed()
-
         if keys[pygame.K_UP]:
             cam.y -= int(screen_height / 100)
-
         if keys[pygame.K_DOWN]:
             cam.y += int(screen_height / 100)
-
         if keys[pygame.K_LEFT]:
             cam.x -= int(screen_width / 100)
-
         if keys[pygame.K_RIGHT]:
             cam.x += int(screen_width / 100)
         if keys[pygame.K_EQUALS]:
@@ -127,14 +123,21 @@ def visualize(hubs: list[Hub], connections: list[Connection]) -> None:
             cam.zoom -= 0.01
 
         screen.fill(COLOR_BG)
-
-        for conn in connections:
-            a = hub_map.get(conn.zone_a)
-            b = hub_map.get(conn.zone_b)
+        for conn in network.connections:
+            a = network.hubs.get(conn.zone_a)
+            b = network.hubs.get(conn.zone_b)
             if a and b:
                 draw_connection(screen, a, b, cam, conn.max_link_capacity)
-        for hub in hubs:
+        for hub in network.hubs.values():
             draw_hub(screen, hub, font, cam)
         pygame.display.flip()
         clock.tick(FPS)
-    pygame.quit
+    pygame.quit()
+
+#drone movement concept
+#for turn in file #each line in the file represents one turn
+#for each drone thats metioned in current tutns line
+     #store the position of the next target and calculate step distance (total_distance_to_target / frames per turn )
+#repeat for amount of frames per turn
+     #for each drone that is mentioned in the current turns line
+         #move the drone step distance towards target direction

@@ -1,4 +1,5 @@
 from parsing import parse_map
+from network import Network
 from hub import Hub
 from connection import Connection
 from visualizer import visualize
@@ -14,6 +15,7 @@ def load_map() -> None:
     for connection in connections:
         connection.get_info()
     print(f"{number_of_drones} drones")
-    visualize(hubs, connections)
+    network: Network = ()
+    visualize(network)
 
 load_map()
