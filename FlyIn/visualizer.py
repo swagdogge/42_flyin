@@ -5,18 +5,18 @@ from cam import Cam
 
 FPS = 30
 FRAMES_PER_TURN = FPS
-HUB_RADIUS = 24
+HUB_RAD = 50
 FONT_SIZE = 14
 
 COLOR_VALUES = {
     "green": (80, 200, 120), "yellow": (240, 220, 60), "red": (220, 70, 70),
     "blue": (80, 140, 220), "gray": (160, 160, 160), "none": (180, 180, 180),
 }
-COLOR_BG         = (30,  30,  40)
+COLOR_BG = (30,  30,  40)
 COLOR_CONNECTION = (100, 100, 120)
-COLOR_TEXT       = (240, 240, 240)
-COLOR_START      = (80,  220,  80)
-COLOR_END        = (220, 200,  60)
+COLOR_TEXT = (240, 240, 240)
+COLOR_START = (80,  220,  80)
+COLOR_END = (220, 200,  60)
 
 
 def cammed(hub: Hub, cam: Cam) -> tuple[int, int]:
@@ -108,7 +108,15 @@ def visualize(network: Network, output_lines: list[str]) -> None:
         keys = pygame.key.get_pressed()
         cam.x += (keys[pygame.K_d] - keys[pygame.K_a]) * W // 100
         cam.y += (keys[pygame.K_s] - keys[pygame.K_w]) * H // 100
-        cam.zoom = max(0.05, cam.zoom + (keys[pygame.K_EQUALS] - keys[pygame.K_MINUS]) * 0.01)
+        zoom_speed = 1.02
+
+        if keys[pygame.K_EQUALS]:
+            cam.zoom *= zoom_speed
+
+        if keys[pygame.K_MINUS]:
+            cam.zoom /= zoom_speed
+
+        cam.zoom = max(0.05, cam.zoom)
 
         # interpolation factor: 0.0 at start of turn, 1.0 at end
         t = current_frame / FRAMES_PER_TURN if playing else 0.0
@@ -117,25 +125,30 @@ def visualize(network: Network, output_lines: list[str]) -> None:
 
         screen.fill(COLOR_BG)
 
+        # display of connections
         for conn in network.connections:
             a, b = network.hubs.get(conn.zone_a), network.hubs.get(conn.zone_b)
             if a and b:
                 pygame.draw.line(screen, COLOR_CONNECTION,
                                  cammed(a, cam), cammed(b, cam),
-                                 width=max(1, conn.max_link_capacity * 2))
+                                 width=max(1, conn.max_link_capacity + 1))
 
+        # display of hubs and their names
         for hub in network.hubs.values():
             color = COLOR_VALUES.get(hub.color, COLOR_VALUES["none"])
+            # get hub size adjusted to zoom level
+            adj_rad = HUB_RAD * 0.2 * cam.zoom
             if hub.is_start:
-                pygame.draw.circle(screen, COLOR_START, cammed(hub, cam), HUB_RADIUS + 5, 3)
+                pygame.draw.circle(screen, COLOR_START, cammed(hub, cam), adj_rad + 5, 3)
             if hub.is_end:
-                pygame.draw.circle(screen, COLOR_END, cammed(hub, cam), HUB_RADIUS + 5, 3)
-            pygame.draw.circle(screen, color, cammed(hub, cam), HUB_RADIUS)
-            pygame.draw.circle(screen, COLOR_TEXT, cammed(hub, cam), HUB_RADIUS, 1)
+                pygame.draw.circle(screen, COLOR_END, cammed(hub, cam), adj_rad + 5, 3)
+            pygame.draw.circle(screen, color, cammed(hub, cam), adj_rad)
+            pygame.draw.circle(screen, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
             lbl = font.render(hub.name, True, COLOR_TEXT)
             cx, cy = cammed(hub, cam)
-            screen.blit(lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RADIUS + 4))
+            screen.blit(lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
 
+        # display of drones and IDs
         for label in sorted(drone_labels):
             ax, ay = resolve_pos(pos_now.get(label, start_hub), network, cam)
             bx, by = resolve_pos(pos_next.get(label, start_hub), network, cam)
@@ -146,7 +159,7 @@ def visualize(network: Network, output_lines: list[str]) -> None:
 
         mode = "PLAYING" if playing else "PAUSED"
         screen.blit(font.render(
-            f"Turn {current_turn}/{total - 1}  [{mode}]  "
+            f"Turn {current_turn}/{total - 1}  [{mode}]"
             f"SPACE: play/pause  RIGHT: step  LEFT: back  WASD: pan  +/-: zoom",
             True, COLOR_TEXT), (12, 12))
 

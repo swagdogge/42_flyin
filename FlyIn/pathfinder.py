@@ -201,12 +201,13 @@ def plan_all_drones(
     reservations = ReservationTable()
     all_paths: list[list[tuple[str, int]]] = []
 
-    for _ in range(nb_drones):
+    for i in range(nb_drones):
         path = timed_astar(network, reservations, start, end)
         if not path:
             # No path found for this drone — return what we have so far.
             break
         commit_path(reservations, path)
+        print(f"path committed for drone {i}")
         all_paths.append(path)
 
     return all_paths

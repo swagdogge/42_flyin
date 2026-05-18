@@ -1,7 +1,8 @@
 from hub import Hub, VALID_ZONE_TYPES
 from connection import Connection
 
-def parse_options(options_str: str, line_num:int) -> dict:
+
+def parse_options(options_str: str, line_num: int) -> dict:
     """parse an options block like [zone=type color=color max_drones=int]"""
     options: dict[str, str] = {}
     options_str = options_str.strip("[]").strip()
@@ -21,9 +22,9 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
     seen_start = False
     seen_end = False
     hub_names: set[str] = set()
-    seen_connections:set[frozenset[str]] = set()
+    seen_connections: set[frozenset[str]] = set()
     with open(filename, "r") as file:
-        for line_num, line in enumerate(file, start = 1):
+        for line_num, line in enumerate(file, start=1):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -37,8 +38,10 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
                     nb_drones = int(rest)
                     if nb_drones <= 0:
                         raise ValueError()
-                except:
-                    raise ValueError(f"Line {line_num}: nb_drones must be a positive integer")
+                except ValueError:
+                    raise ValueError(
+                        f"Line {line_num}: nb_drones must be a "
+                        "positive integer")
 
             elif prefix in ("hub", "start_hub", "end_hub"):
                 options: dict[str, str] = {}
@@ -53,11 +56,13 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
                 try:
                     x = int(parts[1])
                     y = int(parts[2])
-                except:
-                    raise ValueError(f"Line {line_num}: Coordinates must be integers")
-                
+                except ValueError:
+                    raise ValueError(
+                        f"Line {line_num}: Coordinates must be integers")
+
                 if name in hub_names:
-                    raise ValueError(f"Line {line_num}: Duplicate hub name '{name}'")
+                    raise ValueError(
+                        f"Line {line_num}: Duplicate hub name '{name}'")
                 hub_names.add(name)
 
                 zone_type = options.get("zone", "normal")
@@ -65,25 +70,27 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
                     raise ValueError(
                         f"Line {line_num}: Invalid zone type '{zone_type}'"
                     )
-                
+
                 try:
                     max_drones = int(options.get("max_drones", "1"))
                     if max_drones <= 0:
                         raise ValueError()
                 except ValueError:
                     raise ValueError(
-                        f"Line {line_num}: max_drones must be a positive integer"
+                        f"Line {line_num}: max_drones must be "
+                        "a positive integer"
                     )
 
                 if prefix == "start_hub":
                     if seen_start:
-                        raise ValueError(f"Line {line_num}: Multiple start_hub defined")
+                        raise ValueError(f"Line {line_num}: "
+                                         "Multiple start_hub defined")
                     seen_start = True
                 if prefix == "end_hub":
                     if seen_end:
-                        raise ValueError(f"Line {line_num}: Multiple end_hub defined")
+                        raise ValueError(f"Line {line_num}: "
+                                         "Multiple end_hub defined")
                     seen_end = True
-
 
                 hubs.append(Hub(
                     name=name, x=x, y=y,
@@ -94,39 +101,46 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
                     is_end=(prefix == "end_hub"),
                 ))
             elif prefix == "connection":
-                    options = {}
-                    if "[" in rest:
-                        main, option_str = rest.split("[", 1)
-                        options = parse_options(option_str, line_num)
-                    else:
-                        main = rest
+                options = {}
+                if "[" in rest:
+                    main, option_str = rest.split("[", 1)
+                    options = parse_options(option_str, line_num)
+                else:
+                    main = rest
 
-                    if "-" not in main:
-                        raise ValueError(f"Line {line_num}: Connection missing '-' separator")
+                if "-" not in main:
+                    raise ValueError(f"Line {line_num}: Connection missing"
+                                     " '-' separator")
 
-                    a, b = main.strip().split("-", 1)
-                    a, b = a.strip(), b.strip()
+                a, b = main.strip().split("-", 1)
+                a, b = a.strip(), b.strip()
 
-                    if a not in hub_names or b not in hub_names:
-                        raise ValueError(
-                            f"Line {line_num}: Connection references unknown hub(s)"
-                        )
+                if a not in hub_names or b not in hub_names:
+                    print(f"Line {line_num}: Skipping connection {a}-{b}"
+                          " (one or both hubs unknown)")
+                    continue
 
-                    pair = frozenset({a, b})
-                    if pair in seen_connections:
-                        raise ValueError(f"Line {line_num}: Duplicate connection {a}-{b}")
+                    #                  raise ValueError(
+                    # f"Line {line_num}: Connection references unknown hub(s)"
+                    #
+
+                pair = frozenset({a, b})
+                if pair in seen_connections:
+                    print(f"Line {line_num}: Duplicate connection {a}-{b}")
+                else:
                     seen_connections.add(pair)
 
-                    try:
-                        capacity = int(options.get("max_link_capacity", "1"))
-                        if capacity <= 0:
-                            raise ValueError()
-                    except ValueError:
-                        raise ValueError(
-                            f"Line {line_num}: max_link_capacity must be a positive integer"
-                        )
+                try:
+                    capacity = int(options.get("max_link_capacity", "1"))
+                    if capacity <= 0:
+                        raise ValueError()
+                except ValueError:
+                    raise ValueError(
+                        f"Line {line_num}: max_link_capacity must be a "
+                        "positive integer"
+                    )
 
-                    connections.append(Connection(a, b, capacity))
+                connections.append(Connection(a, b, capacity))
 
         if not seen_start:
             raise ValueError("No start_hub defined")
