@@ -73,8 +73,8 @@ def timed_astar(
     """
     Find the lowest-turn timed path from start to end.
 
-    Uses a simple priority queue (plain list + min-pop) so no imports
-    are needed.  Priority zones are preferred by a small tie-break bonus.
+    Uses a simple priority queue (plain list + min-pop)
+    Priority zones are preferred by a small tie-break bonus.
 
     Args:
         network: The full hub/connection graph.

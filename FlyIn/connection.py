@@ -2,7 +2,7 @@ class Connection:
     """represents a connection between two hubs"""
 
     def __init__(
-        self, 
+        self,
         zone_a: str,
         zone_b: str,
         max_link_capacity: int = 1,
@@ -13,4 +13,5 @@ class Connection:
         self.max_link_capacity = max_link_capacity
 
     def get_info(self):
-         print(f"Connection {self.zone_a}-{self.zone_b}, capacity: {self.max_link_capacity}")
+        print(f"Connection {self.zone_a}-{self.zone_b}, "
+              f"capacity: {self.max_link_capacity}")

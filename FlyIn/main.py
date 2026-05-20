@@ -1,7 +1,5 @@
 from parsing import parse_map
 from network import Network
-from hub import Hub
-from connection import Connection
 from visualizer import visualize
 from drone import Drone
 from pathfinder import plan_all_drones
@@ -41,7 +39,8 @@ def run_simulation(
                     break
 
             if next_step is None:
-                # check if drone is mid-transit (arrives next turn to restricted zone)
+                # check if drone is mid-transit
+                # (arrives next turn to restricted zone)
                 prev_hub = None
                 next_hub_name = None
                 for i, (hub_name, arrival_turn) in enumerate(drone.path):
@@ -92,7 +91,8 @@ def run_simulation(
 
 
 def load_map() -> None:
-    """Prompt for a map file, plan all drone paths, run and print simulation."""
+    """Prompt for a map file, plan all drone paths,
+    run and print simulation."""
     filename = input("Enter name of file to read data from: ")
 
     hubs, connections, nb_drones = parse_map(filename)

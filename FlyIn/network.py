@@ -1,10 +1,11 @@
 from hub import Hub
 from connection import Connection
 
+
 class Network:
     """represents the full network of hubs and connections
-    creates a dictionary with hub names as keys and the respective Hub object as value
-
+    creates a dictionary with hub names as keys and
+    the respective Hub object as value
     """
 
     def __init__(
@@ -23,10 +24,10 @@ class Network:
             self.adjacency[conn.zone_a].append(conn)
             self.adjacency[conn.zone_b].append(conn)
 
-    def get_hub(self, name:str) -> Hub:
+    def get_hub(self, name: str) -> Hub:
         """return hub object by name"""
         return self.hubs[name]
-    
+
     def get_neighbours(self, name: str) -> list[tuple[Hub, Connection]]:
         """Return list of (neighbour_hub, connection) pairs for a given hub."""
         result = []

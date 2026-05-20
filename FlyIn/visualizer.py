@@ -84,7 +84,7 @@ def visualize(network: Network, output_lines: list[str]) -> None:
     current_turn = 0
     current_frame = 0
     playing = False
-
+    display_hubs: bool = True
     running = True
     while running:
         for event in pygame.event.get():
@@ -104,6 +104,8 @@ def visualize(network: Network, output_lines: list[str]) -> None:
                     playing = False
                     current_frame = 0
                     current_turn = max(current_turn - 1, 0)
+                elif event.key == pygame.K_h:
+                    display_hubs = not display_hubs
 
         keys = pygame.key.get_pressed()
         cam.x += (keys[pygame.K_d] - keys[pygame.K_a]) * W // 100
@@ -134,19 +136,20 @@ def visualize(network: Network, output_lines: list[str]) -> None:
                                  width=max(1, conn.max_link_capacity + 1))
 
         # display of hubs and their names
-        for hub in network.hubs.values():
-            color = COLOR_VALUES.get(hub.color, COLOR_VALUES["none"])
-            # get hub size adjusted to zoom level
-            adj_rad = HUB_RAD * 0.2 * cam.zoom
-            if hub.is_start:
-                pygame.draw.circle(screen, COLOR_START, cammed(hub, cam), adj_rad + 5, 3)
-            if hub.is_end:
-                pygame.draw.circle(screen, COLOR_END, cammed(hub, cam), adj_rad + 5, 3)
-            pygame.draw.circle(screen, color, cammed(hub, cam), adj_rad)
-            pygame.draw.circle(screen, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
-            lbl = font.render(hub.name, True, COLOR_TEXT)
-            cx, cy = cammed(hub, cam)
-            screen.blit(lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
+        if display_hubs == 1:
+            for hub in network.hubs.values():
+                color = COLOR_VALUES.get(hub.color, COLOR_VALUES["none"])
+                # get hub size adjusted to zoom level
+                adj_rad = HUB_RAD * 0.2 * cam.zoom
+                if hub.is_start:
+                    pygame.draw.circle(screen, COLOR_START, cammed(hub, cam), adj_rad + 5, 3)
+                if hub.is_end:
+                    pygame.draw.circle(screen, COLOR_END, cammed(hub, cam), adj_rad + 5, 3)
+                pygame.draw.circle(screen, color, cammed(hub, cam), adj_rad)
+                pygame.draw.circle(screen, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
+                lbl = font.render(hub.name, True, COLOR_TEXT)
+                cx, cy = cammed(hub, cam)
+                screen.blit(lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
 
         # display of drones and IDs
         for label in sorted(drone_labels):
