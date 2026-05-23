@@ -17,13 +17,8 @@ The core of each individual drone's routing is a time-space A* search. Unlike st
 
 A* was chosen because the graph has weighted edges (restricted zones cost 2 turns, priority zones are preferred) and a clear goal state, making it a natural fit over simpler approaches like BFS which treat all edges equally.
 
-![alt text](images/image.png)
-
-
 At each state (hub, turn), the drone can either wait (if the hub has capacity at turn+1) or move to any non-blocked neighbour (if the link and destination hub both have capacity at the relevant turns). Priority-zone neighbours get a small bonus=0 tie-break advantage over bonus=1 for normal zones, so equal-cost paths prefer them. Additionally, waiting also has a tie-break bonus over moving to avoid drones moving back and forth between two hubs instead of waiting for two turns.
 plan_all_drones wraps the above in a simple sequential loop:
-
-![alt text](images/image-1.png)
 
 This approach is optimal for each individual drone given the constraints of those planned before it, but not globally optimal across all drones simultaneously, since earlier drones get better paths and later drones may need to wait or detour.
 
