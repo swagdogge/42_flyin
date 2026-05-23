@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from parsing import parse_map
 from network import Network
 from visualizer import visualize
@@ -91,9 +93,22 @@ def run_simulation(
 
 
 def load_map() -> None:
-    """Prompt for a map file, plan all drone paths,
-    run and print simulation."""
-    filename = input("Enter name of file to read data from: ")
+    """
+    Asks for a map file
+    plans all drone paths
+    runs visualizer
+    """
+    print("""
+      ______ _       _____
+     |  ____| |     |_   _|
+     | |__  | |_   _  | |  _ __
+     |  __| | | | | | | | | '_  \\
+     | |    | | |_| |_| |_| | | |
+     |_|    |_|\\__, |_____|_| |_|
+                __/ |
+               |___/
+    """)
+    filename = input("Enter name of file to read map data from: ")
 
     hubs, connections, nb_drones = parse_map(filename)
     network = Network(hubs, connections)
@@ -111,9 +126,9 @@ def load_map() -> None:
         drones.append(drone)
 
     output_lines = run_simulation(network, drones, end_hub)
-    for line in output_lines:
-        print(line)
-
+    with open("output.txt", "w") as f:
+        f.write("\n".join(output_lines))
+    print("Launching visualizer...")
     visualize(network, output_lines)
 
 

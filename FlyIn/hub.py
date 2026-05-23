@@ -7,8 +7,8 @@ class Hub:
     def __init__(
             self,
             name: str,
-            x: int,
-            y: int,
+            x: float,
+            y: float,
             zone: str = "normal",
             color: str = "none",
             max_drones: int = 1,

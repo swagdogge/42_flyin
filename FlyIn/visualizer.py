@@ -20,17 +20,34 @@ COLOR_END = (220, 200,  60)
 
 
 def cammed(hub: Hub, cam: Cam) -> tuple[int, int]:
-    """Convert hub world coords to screen coords."""
+    """Convert hub coords to camera adjusted screen coords."""
     return (int((hub.x - cam.x) * cam.zoom), int((hub.y - cam.y) * cam.zoom))
 
 
-def scale_hubs(hubs: list[Hub], margin: int, screen_w: int, screen_h: int) -> None:
-    """Fit hub coords into the screen."""
+def scale_hubs(
+    hubs: list[Hub],
+    margin: int,
+    screen_w: int,
+    screen_h: int,
+) -> None:
+    """Fit hub coords into the screen preserving aspect ratio, centered."""
     xs, ys = [h.x for h in hubs], [h.y for h in hubs]
-    span_x, span_y = max(max(xs) - min(xs), 1), max(max(ys) - min(ys), 1)
+    min_x, min_y = min(xs), min(ys)
+    span_x = max(max(xs) - min_x, 1)
+    span_y = max(max(ys) - min_y, 1)
+
+    usable_w = screen_w - 2 * margin
+    usable_h = screen_h - 2 * margin
+
+    scale = min(usable_w / span_x, usable_h / span_y)
+
+    # Centre the map in the remaining space after scaling
+    offset_x = margin + (usable_w - span_x * scale) / 2
+    offset_y = margin + (usable_h - span_y * scale) / 2
+
     for h in hubs:
-        h.x = int(margin + (h.x - min(xs)) / span_x * (screen_w - 2 * margin))
-        h.y = int(margin + (h.y - min(ys)) / span_y * (screen_h - 2 * margin))
+        h.x = offset_x + (h.x - min_x) * scale
+        h.y = offset_y + (h.y - min_y) * scale
 
 
 def build_turns(output_lines: list[str], start_hub: str,
@@ -41,13 +58,16 @@ def build_turns(output_lines: list[str], start_hub: str,
     for line in output_lines:
         for token in line.strip().split():
             parts = token.split("-")
-            current[parts[0]] = f"{parts[1]}>{parts[2]}" if len(parts) == 3 else parts[1]
+            if len(parts) == 3:
+                current[parts[0]] = f"{parts[1]}>{parts[2]}"
+            else:
+                current[parts[0]] = parts[1]
         turns.append(dict(current))
     return turns
 
 
 def resolve_pos(pos: str, network: Network, cam: Cam) -> tuple[int, int]:
-    """Screen coords for a hub name or 'a>b' transit string."""
+    """get screen coordinates for a hub name or 'a>b' transit string."""
     if ">" in pos:
         a, b = network.hubs[pos.split(">")[0]], network.hubs[pos.split(">")[1]]
         return (int(((a.x + b.x) / 2 - cam.x) * cam.zoom),
@@ -56,29 +76,52 @@ def resolve_pos(pos: str, network: Network, cam: Cam) -> tuple[int, int]:
 
 
 def visualize(network: Network, output_lines: list[str]) -> None:
-    """Visualizer with step mode and animated playback.
+    """
+    Visualizer with step / debug mode and animated playback.
 
     SPACE: play/pause animation
-    BACKSPACE/RIGHT: step back/forward one turn (also pauses)
-    Arrow keys: pan   +/-: zoom   ESC: quit
+    BACKSPACE/RIGHT: step back/forward one turn (and pauses)
+    WASD: move camera +/-: zoom   ESC: quit
+
+    Input:
+    Network: Network object containing all hubs and connections
+    output_lines: list of drone instructions (one line per turn)
     """
     pygame.init()
+
+    # DISPLAY / TEXT / TIME
     info = pygame.display.Info()
     W, H = info.current_w, info.current_h
     screen = pygame.display.set_mode((W, H))
+    hub_surface = pygame.Surface((W, H), pygame.SRCALPHA)
     pygame.display.set_caption("fly_in_visualizer")
     font = pygame.font.SysFont("Arial", FONT_SIZE)
     clock = pygame.time.Clock()
-    cam = Cam(0, 0, 1)
 
+    # CAMERA
+    cam = Cam(0, 0, 1)
+    zoom_speed = 1.02
+    cam_dirty = True
+
+    # SCALE HUBS
+    screen.fill(COLOR_BG)
+    loading = font.render("Scaling Hubs...", True, COLOR_TEXT)
+    screen.blit(loading, loading.get_rect(centerx=W // 2, centery=H // 2))
+    pygame.display.flip()
     scale_hubs(list(network.hubs.values()), 80, W, H)
     start_hub = next(h.name for h in network.hubs.values() if h.is_start)
 
+    # LABEL DRONES
     drone_labels: set[str] = set()
     for line in output_lines:
         for token in line.strip().split():
             drone_labels.add(token.split("-")[0])
 
+    # BUILD TURNS
+    screen.fill(COLOR_BG)
+    loading = font.render("Building Turns...", True, COLOR_TEXT)
+    screen.blit(loading, loading.get_rect(centerx=W // 2, centery=H // 2))
+    pygame.display.flip()
     turns = build_turns(output_lines, start_hub, len(drone_labels))
     total = len(turns)
     current_turn = 0
@@ -86,17 +129,24 @@ def visualize(network: Network, output_lines: list[str]) -> None:
     playing = False
     display_hubs: bool = True
     running = True
+
+    # SORT CONNECTIONS loading screen
+    screen.fill(COLOR_BG)
+    loading = font.render("Sorting Connections...", True, COLOR_TEXT)
+    screen.blit(loading, loading.get_rect(centerx=W // 2, centery=H // 2))
+    pygame.display.flip()
+    sorted_conn = sorted(
+        network.connections,
+        key=lambda conn: conn.max_link_capacity
+    )
+
+    # KEYBOARD INPUT
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                elif event.key == pygame.K_SPACE:
-                    playing = not playing
-                    current_frame = 0
-                elif event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT:
                     playing = False
                     current_frame = 0
                     current_turn = min(current_turn + 1, total - 1)
@@ -104,68 +154,114 @@ def visualize(network: Network, output_lines: list[str]) -> None:
                     playing = False
                     current_frame = 0
                     current_turn = max(current_turn - 1, 0)
+                elif event.key == pygame.K_SPACE:
+                    playing = not playing
+                    current_frame = 0
                 elif event.key == pygame.K_h:
                     display_hubs = not display_hubs
+                    cam_dirty = True
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
 
+        # CAMERA CONTROLS (WASD)
         keys = pygame.key.get_pressed()
-        cam.x += (keys[pygame.K_d] - keys[pygame.K_a]) * W // 100
-        cam.y += (keys[pygame.K_s] - keys[pygame.K_w]) * H // 100
-        zoom_speed = 1.02
+        dx = (keys[pygame.K_d] - keys[pygame.K_a]) * W // 100
+        dy = (keys[pygame.K_s] - keys[pygame.K_w]) * H // 100
+        if dx or dy:
+            cam.x += dx
+            cam.y += dy
+            cam_dirty = True
 
+        # CAMERA CONTROLS (ZOOM)
         if keys[pygame.K_EQUALS]:
             cam.zoom *= zoom_speed
-
+            cam_dirty = True
         if keys[pygame.K_MINUS]:
             cam.zoom /= zoom_speed
-
+            cam_dirty = True
         cam.zoom = max(0.05, cam.zoom)
 
-        # interpolation factor: 0.0 at start of turn, 1.0 at end
+        # INTERPOLATION
         t = current_frame / FRAMES_PER_TURN if playing else 0.0
         pos_now = turns[current_turn]
         pos_next = turns[min(current_turn + 1, total - 1)]
 
+        # CONNECTIONS DISPLAY
+        if cam_dirty:
+            hub_surface.fill((0, 0, 0, 0))
+
+            max_cap = max(
+                (c.max_link_capacity for c in network.connections), default=1)
+
+            for conn in sorted_conn:
+                a, b = network.hubs.get(
+                    conn.zone_a), network.hubs.get(conn.zone_b)
+                if a and b:
+                    cap_t = max(
+                        0.0, min(1.0, conn.max_link_capacity / max_cap))
+                    color = (
+                        int(220 * (1 - cap_t)),
+                        int(40 + 160 * cap_t),
+                        int(40 + 80 * cap_t),
+                    )
+                    pygame.draw.line(hub_surface, color,
+                                     cammed(a, cam), cammed(b, cam),
+                                     width=max(1, conn.max_link_capacity + 1))
+
+        # HUBS DISPLAY
+            if display_hubs:
+                for hub in network.hubs.values():
+
+                    color = COLOR_VALUES.get(hub.color, COLOR_VALUES["none"])
+                    adj_rad = HUB_RAD * 0.2 * cam.zoom
+
+                    if hub.is_start:
+                        pygame.draw.circle(
+                            hub_surface, COLOR_START,
+                            cammed(hub, cam), adj_rad + 5, 3)
+
+                    if hub.is_end:
+                        pygame.draw.circle(
+                            hub_surface, COLOR_END,
+                            cammed(hub, cam), adj_rad + 5, 3)
+
+                    pygame.draw.circle(
+                        hub_surface, color, cammed(hub, cam), adj_rad)
+
+                    pygame.draw.circle(
+                        hub_surface, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
+
+                    lbl = font.render(hub.name, True, COLOR_TEXT)
+                    cx, cy = cammed(hub, cam)
+                    hub_surface.blit(
+                        lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
+
+                cam_dirty = False
+
         screen.fill(COLOR_BG)
+        screen.blit(hub_surface, (0, 0))
 
-        # display of connections
-        for conn in network.connections:
-            a, b = network.hubs.get(conn.zone_a), network.hubs.get(conn.zone_b)
-            if a and b:
-                pygame.draw.line(screen, COLOR_CONNECTION,
-                                 cammed(a, cam), cammed(b, cam),
-                                 width=max(1, conn.max_link_capacity + 1))
-
-        # display of hubs and their names
-        if display_hubs == 1:
-            for hub in network.hubs.values():
-                color = COLOR_VALUES.get(hub.color, COLOR_VALUES["none"])
-                # get hub size adjusted to zoom level
-                adj_rad = HUB_RAD * 0.2 * cam.zoom
-                if hub.is_start:
-                    pygame.draw.circle(screen, COLOR_START, cammed(hub, cam), adj_rad + 5, 3)
-                if hub.is_end:
-                    pygame.draw.circle(screen, COLOR_END, cammed(hub, cam), adj_rad + 5, 3)
-                pygame.draw.circle(screen, color, cammed(hub, cam), adj_rad)
-                pygame.draw.circle(screen, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
-                lbl = font.render(hub.name, True, COLOR_TEXT)
-                cx, cy = cammed(hub, cam)
-                screen.blit(lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
-
-        # display of drones and IDs
+        # DRONES DISPLAY
         for label in sorted(drone_labels):
             ax, ay = resolve_pos(pos_now.get(label, start_hub), network, cam)
             bx, by = resolve_pos(pos_next.get(label, start_hub), network, cam)
             dx = int(ax + (bx - ax) * t)
             dy = int(ay + (by - ay) * t)
             pygame.draw.circle(screen, (255, 220, 50), (dx, dy), 10)
-            screen.blit(font.render(label, True, COLOR_TEXT), (dx + 12, dy - 8))
+            screen.blit(
+                font.render(label, True, COLOR_TEXT), (dx + 12, dy - 8))
 
-        mode = "PLAYING" if playing else "PAUSED"
+        # INFO / CONTROLS
+        if playing:
+            mode = "PLAYING"
+        else:
+            mode = "PAUSED"
         screen.blit(font.render(
             f"Turn {current_turn}/{total - 1}  [{mode}]"
-            f"SPACE: play/pause  RIGHT: step  LEFT: back  WASD: pan  +/-: zoom",
+            f"SPACE: play/pause RIGHT: step LEFT: back WASD: pan  +/-: zoom",
             True, COLOR_TEXT), (12, 12))
 
+        # TURN CONTROLS
         if playing:
             current_frame += 1
             if current_frame >= FRAMES_PER_TURN:
@@ -175,6 +271,7 @@ def visualize(network: Network, output_lines: list[str]) -> None:
                 else:
                     playing = False
 
+        # REFRESH
         pygame.display.flip()
         clock.tick(FPS)
 

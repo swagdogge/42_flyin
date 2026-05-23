@@ -1,6 +1,6 @@
 from network import Network
 from reservation import ReservationTable
-
+import heapq
 
 MAX_TIME = 200
 
@@ -44,7 +44,10 @@ def can_traverse(
             return False
 
     if not neighbor.is_start and not neighbor.is_end:
-        if reservations.hub_used(neighbor_name, arrival_turn) >= neighbor.max_drones:
+        if (
+            reservations.hub_used(neighbor_name, arrival_turn)
+            >= neighbor.max_drones
+        ):
             return False
 
     return True
@@ -98,11 +101,7 @@ def timed_astar(
 
     while queue:
         # Pop the entry with the smallest (arrival_turn, priority_bonus).
-        min_index = 0
-        for i in range(1, len(queue)):
-            if queue[i] < queue[min_index]:
-                min_index = i
-        cost, _, current = queue.pop(min_index)
+        cost, _, current = heapq.heappop(queue)
         current_turn = cost
 
         state: tuple[str, int] = (current, current_turn)
@@ -126,8 +125,7 @@ def timed_astar(
             if wait_turn < old:
                 costs[wait_state] = wait_turn
                 previous[wait_state] = state
-                bonus = 0 if network.hubs[current].zone == "priority" else 1
-                queue.append((wait_turn, bonus, current))
+                heapq.heappush(queue, (wait_turn, -1, current))
 
         # --- MOVE ---
         for neighbor, connection in network.get_neighbours(current):
@@ -153,7 +151,7 @@ def timed_astar(
                 costs[new_state] = arrival_turn
                 previous[new_state] = state
                 bonus = 0 if neighbor.zone == "priority" else 1
-                queue.append((arrival_turn, bonus, neighbor.name))
+                heapq.heappush(queue, (arrival_turn, bonus, neighbor.name))
 
     return []
 
@@ -200,14 +198,14 @@ def plan_all_drones(
     """
     reservations = ReservationTable()
     all_paths: list[list[tuple[str, int]]] = []
-
+    print(f"Planning {nb_drones} drone paths...")
     for i in range(nb_drones):
         path = timed_astar(network, reservations, start, end)
         if not path:
             # No path found for this drone — return what we have so far.
             break
         commit_path(reservations, path)
-        print(f"path committed for drone {i}")
+        print(f"{i + 1}/{nb_drones}")
         all_paths.append(path)
-
+    print("Planning completed!")
     return all_paths
