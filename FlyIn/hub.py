@@ -25,7 +25,7 @@ class Hub:
         self.is_start = is_start
         self.is_end = is_end
 
-    def get_info(self):
+    def get_info(self) -> None:
         info = (f"Hub {self.name}: {self.x}, {self.y}")
         if self.is_start:
             info += (" (start)")

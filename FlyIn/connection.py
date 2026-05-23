@@ -12,6 +12,6 @@ class Connection:
         self.zone_b = zone_b
         self.max_link_capacity = max_link_capacity
 
-    def get_info(self):
+    def get_info(self) -> None:
         print(f"Connection {self.zone_a}-{self.zone_b}, "
               f"capacity: {self.max_link_capacity}")

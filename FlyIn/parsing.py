@@ -2,7 +2,7 @@ from hub import Hub, VALID_ZONE_TYPES
 from connection import Connection
 
 
-def parse_options(options_str: str, line_num: int) -> dict:
+def parse_options(options_str: str, line_num: int) -> dict[str, str]:
     """parse an options block like [zone=type color=color max_drones=int]"""
     options: dict[str, str] = {}
     options_str = options_str.strip("[]").strip()
