@@ -274,5 +274,5 @@ def visualize(network: Network, output_lines: list[str]) -> None:
         # REFRESH
         pygame.display.flip()
         clock.tick(FPS)
-
+    print("Goodbye <3")
     pygame.quit()

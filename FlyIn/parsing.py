@@ -27,6 +27,9 @@ def _parse_hub(prefix: str, rest: str, line_num: int,
     options, main = _split_options(rest, line_num)
     parts = main.strip().split()
     name = parts[0]
+    if "-" in name or " " in name:
+        raise ValueError(f"Line {line_num}: Hub name '{name}' "
+                         "must not contain dashes or spaces")
     try:
         x, y = int(parts[1]), int(parts[2])
     except ValueError:
@@ -63,12 +66,10 @@ def _parse_connection(rest: str, line_num: int,
         raise ValueError(f"Line {line_num}: Connection missing '-' separator")
     a, b = (s.strip() for s in main.split("-", 1))
     if a not in hub_names or b not in hub_names:
-        print(f"Line {line_num}: Skipping connection {a}-{b} (unknown hub)")
-        return None
+        raise ValueError(f"Line {line_num}: Unknown hub, '{a}'")
     pair = frozenset({a, b})
     if pair in seen_connections:
-        print(f"Line {line_num}: Duplicate connection {a}-{b}")
-        return None
+        raise ValueError(f"Line {line_num}: Duplicate connection {a}-{b}")
     seen_connections.add(pair)
     try:
         capacity = int(options.get("max_link_capacity", "1"))
@@ -96,6 +97,7 @@ def parse_map(filename: str) -> tuple[list[Hub], list[Connection], int]:
         filename = filename + ".txt"
 
     with open(filename) as file:
+
         for line_num, line in enumerate(file, start=1):
             line = line.strip()
             if not line or line.startswith("#"):
