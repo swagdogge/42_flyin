@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+import readline
+import glob
+import os
 from parsing import parse_map
 from network import Network
 from visualizer import visualize
@@ -39,6 +41,10 @@ def run_simulation(
                 if arrival_turn == turn:
                     next_step = hub_name
                     break
+
+            # drone is waiting — omit from output
+            if next_step == drone.pos:
+                continue
 
             if next_step is None:
                 # check if drone is mid-transit
@@ -92,6 +98,23 @@ def run_simulation(
     return output_lines
 
 
+def prompt_filename(
+        prompt: str = "Enter name of file to read map data from: ") -> str:
+    def complete(text: str, state: int) -> str | None:
+        matches = []
+        for m in glob.glob(text + '*'):
+            if os.path.isdir(m):
+                matches.append(m + '/')
+            else:
+                matches.append(m)
+        return (matches + [None])[state]
+
+    readline.set_completer_delims(' \t\n')
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer(complete)
+    return input(prompt)
+
+
 def load_map() -> None:
     """
     Asks for a map file
@@ -108,8 +131,8 @@ def load_map() -> None:
                 __/ |
                |___/
     """)
-    filename = input("Enter name of file to read map data from: ")
 
+    filename = prompt_filename()
     hubs, connections, nb_drones = parse_map(filename)
     network = Network(hubs, connections)
 

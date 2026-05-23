@@ -230,8 +230,8 @@ def visualize(network: Network, output_lines: list[str]) -> None:
 
                     pygame.draw.circle(
                         hub_surface, COLOR_TEXT, cammed(hub, cam), adj_rad, 1)
-
-                    lbl = font.render(hub.name, True, COLOR_TEXT)
+                    display_string = hub.name + "(" + str(hub.max_drones) + ")"
+                    lbl = font.render(display_string, True, COLOR_TEXT)
                     cx, cy = cammed(hub, cam)
                     hub_surface.blit(
                         lbl, lbl.get_rect(centerx=cx, top=cy + HUB_RAD + 4))
