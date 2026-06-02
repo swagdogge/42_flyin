@@ -1,24 +1,28 @@
 .PHONY: install run debug clean lint lint-strict
 
+PY_FILES = cam.py connection.py drone.py hub.py main.py network.py parsing.py\
+pathfinder.py reservation.py visualizer.py
+
 install:
-	pip install -r requirements.txt
+	uv venv
+	uv pip install -r requirements.txt
 
 run:
-	./FlyIn/main.py
+	uv run ./main.py
 
 debug:
-	python3 -m pdb FlyIn/main.py
+	uv run python3 -m pdb main.py
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type d -name .mypy_cache -exec rm -rf {} +
-	find . -type d -name .pytest_cache -exec rm -rf {} +
 	find . -name "*.pyc" -delete
+	rm -rf .venv
 
 lint:
-	python3 -m flake8 .
-	python3 -m mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	uv run flake8 $(PY_FILES)
+	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-	python3 -m flake8 .
-	python3 -m mypy . --strict
+	uv run flake8 $(PY_FILES)
+	uv run mypy $(PY_FILES) --strict

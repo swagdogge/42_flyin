@@ -2,11 +2,35 @@
 import readline
 import glob
 import os
+import argparse
 from parsing import parse_map
 from network import Network
-from visualizer import visualize
+from visualizer import Visualizer
 from drone import Drone
 from pathfinder import plan_all_drones
+
+
+def parse_args() -> argparse.Namespace:
+    """
+        Parses arguments given when python file is executed
+    """
+    parser = argparse.ArgumentParser(description="FlyIn")
+    parser.add_argument(
+        "filename",
+        nargs="?",                    # makes it optional (0 or 1)
+        help="Map file to load"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default="output.txt",
+        help="Output file path (default: output.txt)"
+    )
+    parser.add_argument(
+        "-n", "--no-visualizer",
+        action="store_true",          # flag, no value needed
+        help="Skip the visualizer"
+    )
+    return parser.parse_args()
 
 
 def run_simulation(
@@ -115,44 +139,51 @@ def prompt_filename(
     return input(prompt)
 
 
-def load_map() -> None:
+def load_map(args: argparse.Namespace | None = None) -> None:
     """
     Asks for a map file
     plans all drone paths
     runs visualizer
     """
-    print("""
-      ______ _       _____
-     |  ____| |     |_   _|
-     | |__  | |_   _  | |  _ __
-     |  __| | | | | | | | | '_  \\
-     | |    | | |_| |_| |_| | | |
-     |_|    |_|\\__, |_____|_| |_|
-                __/ |
-               |___/
-    """)
+    try:
+        print("""
+          ______ _       _____
+         |  ____| |     |_   _|
+         | |__  | |_   _  | |  _ __
+         |  __| | | | | | | | | '_  \\
+         | |    | | |_| |_| |_| | | |
+         |_|    |_|\\__, |_____|_| |_|
+                    __/ |
+                   |___/
+        """)
+        args = parse_args()
+        if args and args.filename:
+            filename = args.filename
+        else:
+            filename = prompt_filename()
+        hubs, connections, nb_drones = parse_map(filename)
+        network = Network(hubs, connections)
+        start_hub = next(h.name for h in hubs if h.is_start)
+        end_hub = next(h.name for h in hubs if h.is_end)
 
-    filename = prompt_filename()
-    hubs, connections, nb_drones = parse_map(filename)
-    network = Network(hubs, connections)
+        # Plan collision-free timed paths for all drones at once.
+        all_paths = plan_all_drones(network, start_hub, end_hub, nb_drones)
 
-    start_hub = next(h.name for h in hubs if h.is_start)
-    end_hub = next(h.name for h in hubs if h.is_end)
+        drones: list[Drone] = []
+        for i, path in enumerate(all_paths):
+            drone = Drone(id=i + 1, start_hub=start_hub)
+            drone.path = path  # list of (hub_name, turn) tuples
+            drones.append(drone)
 
-    # Plan collision-free timed paths for all drones at once.
-    all_paths = plan_all_drones(network, start_hub, end_hub, nb_drones)
-
-    drones: list[Drone] = []
-    for i, path in enumerate(all_paths):
-        drone = Drone(id=i + 1, start_hub=start_hub)
-        drone.path = path  # list of (hub_name, turn) tuples
-        drones.append(drone)
-
-    output_lines = run_simulation(network, drones, end_hub)
-    with open("output.txt", "w") as f:
-        f.write("\n".join(output_lines))
-    print("Launching visualizer...")
-    visualize(network, output_lines)
+        output_lines = run_simulation(network, drones, end_hub)
+        with open(args.output if args else "output.txt", "w") as f:
+            f.write("\n".join(output_lines))
+        if not (args and args.no_visualizer):
+            print("Launching visualizer...")
+            screen = Visualizer()
+            screen.visualize(network, output_lines)
+    except Exception as e:
+        print(e)
 
 
 load_map()
