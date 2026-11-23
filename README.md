@@ -22,7 +22,7 @@ plan_all_drones wraps the above in a simple sequential loop:
 
 This approach is optimal for each individual drone given the constraints of those planned before it, but not globally optimal across all drones simultaneously, since earlier drones get better paths and later drones may need to wait or detour.
 
-Fun Fact: Technically, the path finding algorythm is perfectly capable of having drones use multiple start and end positions. However, a slight rework of he visualizer would be needed to make this work (since the visualizer relies on knowing that all drones start from the provided start hub)
+Fun Fact: Technically, the path finding algorithm is perfectly capable of having drones use multiple start and end positions. However, a slight rework of he visualizer would be needed to make this work (since the visualizer relies on knowing that all drones start from the provided start hub)
 #### VISUALS
 The visualizer comes with many incredible features!
 
